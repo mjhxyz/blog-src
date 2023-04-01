@@ -1,10 +1,11 @@
 ---
 title: python神奇的装饰器
-date: 2020-10-28 07:05:07
 tags:
-- python
+  - python
 categories:
-- python
+  - python
+abbrlink: 26366
+date: 2020-10-28 07:05:07
 ---
 
 # 装饰器

@@ -1,13 +1,14 @@
 ---
 title: HTTP缓存
-date: 2020-09-25 02:46:29
 tags:
-- network
-- http
-- cache
+  - network
+  - http
+  - cache
 categories:
-- network
+  - network
 mermaid: true
+abbrlink: 45598
+date: 2020-09-25 02:46:29
 ---
 
 # HTTP 缓存

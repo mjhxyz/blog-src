@@ -1,12 +1,13 @@
 ---
 title: DNS
-date: 2020-09-25 03:00:06
 tags:
-- network
-- DNS
+  - network
+  - DNS
 categories:
-- network
+  - network
 mermaid: true
+abbrlink: 34869
+date: 2020-09-25 03:00:06
 ---
 # DNS
 

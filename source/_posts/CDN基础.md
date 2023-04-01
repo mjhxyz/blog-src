@@ -1,12 +1,13 @@
 ---
 title: CDN基础
-date: 2020-09-25 03:03:26
 tags:
-- network
-- CDN
+  - network
+  - CDN
 categories:
-- network
+  - network
 mermaid: true
+abbrlink: 49889
+date: 2020-09-25 03:03:26
 ---
 
 # CDN 基础

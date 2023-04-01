@@ -1,11 +1,11 @@
 ---
 title: python神奇的迭代
-date: 2020-09-25 04:46:43
 tags:
-- python
+  - python
 categories:
-- python
-
+  - python
+abbrlink: 33382
+date: 2020-09-25 04:46:43
 ---
 
 # Python 神奇的迭代
