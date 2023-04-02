@@ -1,5 +1,5 @@
 ---
-title: python神奇的装饰器
+title: python装饰器
 tags:
   - python
 categories:

@@ -166,7 +166,7 @@ date: 2023-04-01 09:39:58
 
 ![align-self 作用](https://img.mjhxyz.top//20230401141735.png)
 
-# Flex 布局常用场景
+# Flex 布局练习
 
 ## 居中展示
 
@@ -294,10 +294,8 @@ css
 }
 ```
 
-
-
-
-
-
-
+# 参考
+- [Getting Dicey With Flexbox](https://davidwalsh.name/flexbox-dice)
+- [Flexbox Froggy](https://flexboxfroggy.com/)
+- [Flex Cheatsheet](https://yoksel.github.io/flex-cheatsheet/)
 
