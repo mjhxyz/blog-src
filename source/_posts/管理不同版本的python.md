@@ -2,6 +2,7 @@
 title: 管理不同版本的python
 abbrlink: 63997
 date: 2023-04-05 10:41:57
+index_img: https://img.mjhxyz.top/20230409133608.png
 tags:
 - python
 - 环境
@@ -11,6 +12,8 @@ categories:
 ---
 
 # 管理不同版本的 python
+
+![pyenv&anaconda](https://img.mjhxyz.top/20230409133608.png)
 
 有时候项目需要使用不同版本的 python，比如项目 A 需要 python 3.6，项目 B 需要 python 3.7，这时候就需要管理不同版本的 python。
 
@@ -131,3 +134,19 @@ conda install requests
 ```shell
 conda deactivate
 ```
+
+**linux**
+
+### 安装
+
+
+- 下载和安装
+```shell
+# 下载安装包
+wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.10.3-Linux-x86_64.sh
+# 安装
+bash Miniconda3-py39_4.10.3-Linux-x86_64.sh
+```
+- 安装过程中 需要按照提示进行配置，例如选择安装路径、是否添加到用户环境变量等
+- 安装完成中可以重新登录用户，或者使用 `source .bashrc` 来重新载入用户环境变量
+- 后续的创建和使用虚拟环境和 windows 下的一样
