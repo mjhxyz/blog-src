@@ -268,6 +268,47 @@ supervisor> tail signal_test
 
 ## 其他高级功能
 
+### 事件监听器
+
+supervisor 的事件处理器实现了监控`进程状态变化`和`日志输出`的功能, 使用 supervisor 管理进程时件管理器会监控该进程的状态，并将其状态变化和日志输出作为事件发送给事件监听器。监听器还能使用自己的脚本，来处理。
+
+#### 常见的事件
+
+- PROCESS_STATE: 从一个状态切换到另外的一个状态会触发
+- PROCESS_STATE_STARTING: 从一个状态切换到 `STARTING` 状态会触发
+- PROCESS_STATE_RUNNING: 从 `STARTING` 状态切换到 `RUNNING` 状态会触发
+- PROCESS_STATE_BACKOFF: 从 `STARTING` 状态切换到 `BACKOFF` 状态会触发, 意味着没有成功的进入 `RUNNING` 状态, 会进行重试, 直到达到最大重试次数(`startretries`)
+- PROCESS_STATE_STOPPING: 从 `RUNNING` 状态切换到 `STOPPING` 状态会触发
+- PROCESS_STATE_EXITED: 从 `RUNNING` 状态切换到 `EXITED` 状态会触发, 意味着进程已经退出
+    - 进程本身的运行逻辑已经退出并返回了一个退出码
+- PROCESS_STATE_STOPPED: 从 `RUNNING` 状态切换到 `STOPPED` 状态会触发, 意味着进程已经停止
+    - 表示已经停止运行，可能是 supervisor 停止了进程
+- PROCESS_STATE_FATAL: 从 `BACKOFF` 状态切换到 `FATAL` 状态会触发, 并且超过了最大重试次数(`startretries`), 放弃了重启
+- PROCESS_STATE_UNKNOWN: 切换到 `UNKNOWN` 状态会触发, 一般是 supervisor 本身有问题
+- 还有很多关于日志输出的,就先不一一列举了，可以去文档上查看
+
+#### 使用场景
+
+
+**发送警报**
+
+开发公司的一个项目的时候，需要监控进程的启动状态，如果进程启动失败，需要触发蜂鸣器报警。这个时候就可以使用事件监听器来实现。
+
+1. 监听 `PROCESS_STATE_FATAL` 事件，当进程状态切换到 `FATAL` 状态时，说明重试次数已经用完，放弃了重启，此时触发蜂鸣器报警
+2. 可以编写监听器配置文件
+```conf
+[eventlistener:bee]
+command=/root/cmd/bee
+events=PROCESS_STATE_FATAL
+process_name=easycube
+```
+3. 如果指定的 `command` 脚本不存在，则会报错:
+```bash
+bee:easycube                     FATAL     can't find command '/root/cmd/bee'
+```
+4. 如果出现 `bee:easycube                     FATAL     Exited too quickly (process log may have details)`
+
+
 ### 进程日志和日志管理
 
 #### 如何查看进程日志
