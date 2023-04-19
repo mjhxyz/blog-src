@@ -287,27 +287,125 @@ supervisor 的事件处理器实现了监控`进程状态变化`和`日志输出
 - PROCESS_STATE_UNKNOWN: 切换到 `UNKNOWN` 状态会触发, 一般是 supervisor 本身有问题
 - 还有很多关于日志输出的,就先不一一列举了，可以去文档上查看
 
+#### 使用步骤
+
+**需要使用到的文件**
+
+1. 编写监听器配置文件
+```conf
+[eventlistener:test]
+command=python test.py
+events=PROCESS_STATE_FATAL
+```
+2. 编写监听器脚本
+```python
+import sys
+def write_stdout(s):
+    sys.stdout.write(s)
+    sys.stdout.flush()
+
+def write_stderr(s):
+    sys.stderr.write(s)
+    sys.stderr.flush()
+def main():
+    while True:
+        write_stdout('READY\n')
+        line = sys.stdin.readline()
+        write_stderr(line)
+        headers = dict([ x.split(':') for x in line.split() ])
+        data = sys.stdin.read(int(headers['len']))
+        write_stderr(data)
+        write_stdout('RESULT 2\nOK')
+if __name__ == '__main__':
+    main()
+```
+
+**注意点**
+
+- 一个监听器可以监听`多个事件`，多个事件之间用 `,` 分隔, 具体哪个事件触发了，可以通过读到的标准输出来查看
+- 监听器脚本需要满足 `事件监听器协议`:
+    1. supervisor 只会向处于 `READY` 状态的监听器发送`标准输入`, 因此监听器需要在启动时向标准输出写入 `READY\n` 来通知监听器已经进入 `READY` 状态
+    2. 实现的监听器还需要从 `stdin` 读取事件携带的数据，读取的时候可能会阻塞
+    3. 监听器处理完成以后，需要通知 supervisor 监听器已经处理完成
+       1. 比如向标准输出写入 `RESULT 2\nOK` 或者 `RESULT 4\FAIL`
+       2. 2 和 4 表示数据的长度，`OK` 和 `FAIL` 表示处理结果
+       3. 如果返回的是 `FAIL`, 则表示处理器没有处理好事件，会在以后的某个时刻，再次发送
+       4. 接着 supervisor 自动进入了 `ACKNOWLEDGED` 状态
+    4. 进入 `ACKNOWLEDGED` 状态后，进程可以退出, 如何还需要继续处理，则需要再次向 `stdout` 写入 `READY\n`
+- 更多参数可以去看 supervisor 详细文档
+
+
 #### 使用场景
 
 
-**发送警报**
+###### 发送警报
 
 开发公司的一个项目的时候，需要监控进程的启动状态，如果进程启动失败，需要触发蜂鸣器报警。这个时候就可以使用事件监听器来实现。
 
 1. 监听 `PROCESS_STATE_FATAL` 事件，当进程状态切换到 `FATAL` 状态时，说明重试次数已经用完，放弃了重启，此时触发蜂鸣器报警
 2. 可以编写监听器配置文件
 ```conf
-[eventlistener:bee]
-command=/root/cmd/bee
+[eventlistener:easycube-listener]
+command=easycube-listener
 events=PROCESS_STATE_FATAL
-process_name=easycube
-```
-3. 如果指定的 `command` 脚本不存在，则会报错:
-```bash
-bee:easycube                     FATAL     can't find command '/root/cmd/bee'
-```
-4. 如果出现 `bee:easycube                     FATAL     Exited too quickly (process log may have details)`
 
+autostart=true
+autorestart=true
+log_stdout=true
+log_stderr=true
+stdout_logfile=/var/log/easycube-listener-out.log
+stdout_logfile_maxbytes=5MB
+stdout_logfile_backups=3
+buffer_size=10
+stderr_logfile=/var/log/easycube-listener-err.log
+stderr_logfile_maxbytes=5MB
+stderr_logfile_backups=3
+
+environment=PATH="/root/easycube-py/venv/bin:%(ENV_PATH)s"
+```
+4. 实现
+```python
+import sys
+from easycube.libs import command
+
+def write_stdout(s):
+    sys.stdout.write(s)
+    sys.stdout.flush()
+
+def write_stderr(s):
+    sys.stderr.write(s)
+    sys.stderr.flush()
+
+def main():
+    while True:
+        write_stdout('READY\n')
+        line = sys.stdin.readline()
+        write_stderr(line)
+        headers = dict([x.split(':') for x in line.split()])
+        data = sys.stdin.read(int(headers['len']))
+        write_stderr(data)
+        # beep 一下
+        command.beep_long(show_cmd=False)
+        write_stdout('RESULT 2\nOK')
+
+```
+
+##### 自动重启
+
+可能会有疑问, supervisor 本身就可以自动重启进程, 为什么还要使用事件监听器呢? 我的理解可能有有以下方面的考虑
+
+1. 有条件的重启: 有时候我们只需要在特定条件下才重启进程，例如当进程占用的内存超过一定阈值时才重启
+2. 重启前清理: 在重启之前，可能需要做一些清理操作，比如删除某个临时文件等等
+
+##### 日志记录
+
+可以编写一个脚本来监控进程的日志输出，并将其写入文件或数据库中，以便稍后分析和查看。
+
+supervisor 中，日志相关的事件有:
+
+- `PROCESS_LOG_STDOUT `: 当进程向 `stdout` 写入时触发
+- `PROCESS_LOG_STDERR `: 当进程向 `stderr` 写入时触发
+- `PROCESS_LOG `: 上面两个的组合 
 
 ### 进程日志和日志管理
 
@@ -383,4 +481,14 @@ service supervisor restart
 
 ## 总结
 
-总的来说, supervisor 是一个非常好用的进程管理工具, 帮助我们轻松地管理和监控多个进程。除此之外，Supervisor 还有一些其他的好用功能，例如进程启动优先级配置、进程启动顺序配置等。这些功能可以帮助我们更加灵活地管理和控制进程，进一步提高系统的可靠性和稳定性。如果需要管理多个进程，或者需要监控和控制进程的状态和行为，那么 `supervisor` 是一个值得尝试的工具。希望本文对您有所帮助，谢谢阅读！
+总的来说, supervisor 是一个非常好用的进程管理工具, 帮助我们轻松地管理和监控多个进程。除此之外，Supervisor 还有一些其他的好用功能:
+
+1. 进程监控
+2. 进程管理
+3. 日志管理
+4. 远程管理
+5. 事件监听
+6. 进程组管理
+7. 进程启动优先级配置&进程启动顺序配置
+
+如果需要管理多个进程，或者需要监控和控制进程的状态和行为等等，那么 `supervisor` 是一个值得尝试的工具。希望本文对您有所帮助，谢谢阅读！
