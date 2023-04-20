@@ -41,7 +41,7 @@ sudo pip install supervisor
 ```
 - 使用 `apt` 安装
 ```bash
-sudo apt-get install python-pip
+sudo apt-get install supervisor
 ```
 
 ### pip 安装和 apt 安装的区别
