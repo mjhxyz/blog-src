@@ -261,15 +261,34 @@ Nginx 的基本配置就不多说了，主要有以下重要的配置项:
 
 此时就完成了 Nginx 作为反向代理的配置
 
-## 为什么是 uwsgi+nginx
+## 为什么是 Nginx + uWSGI + Flask
 
-TODO
+![Nginx+uWSGI+Flask架构示意图](https://img.mjhxyz.top/20230424114944.png)
 
+在 Nginx+uUWSGI+flask 架构中，`Nginx` 通过向 `uWSGI` 发送请求来与 Flask 应用程序进行通信。具体来说在这个架构中，Nginx 作为 web 服务器，接收来自客户端的 HTTP 请求，并将这些请求转发给 uWSGI。uWSGI 接收到请求后，将其转发给 Flask 应用程序进行处理，并将处理结果返回给 Nginx，Nginx 再将响应发送回客户端。
+
+### 为什么需要 uWSGI
+
+在这个过程中，Nginx 和 uWSGI 之间的通信是通过 `uwsgi 协议` 完成的(协议的具体内容可以去[https://uwsgi-docs.readthedocs.io/en/latest/Protocol.html](https://uwsgi-docs.readthedocs.io/en/latest/Protocol.html))。uwsgi 协议是一种轻量级的二进制协议。在 Nginx+uWSGI+Flask 架构中，Nginx 通过配置 `uwsgi 模块`来支持 uwsgi 协议，并通过 `uwsgi_pass` 指令将请求转发给 uwsgi 服务器。
+
+如果不使用类似 `uWSGI` 这样的中间一层，那么 Nginx 就无法与 Flask 应用程序进行通信，因为 Nginx 不能直接支持 Flask 应用程序的 WSGI 协议，也就无法执行生成内容所必需的 Python 代码。
+
+### 为什么需要 Nginx
+
+Nginx+uWSGI+Flask 架构中，Nginx 作为 web 服务器，它的主要功能是接收`来自客户端的 HTTP 请求`，并将这些请求转发给 uWSGI。
+
+对于需要 Nginx 而不是直接使用 uWSGI 的原因，我觉得有以下几点:
+
+- Nginx 是一个高性能的 HTTP 服务器，它可以高效的`处理静态文件`请求
+  - uWSGI 虽然也可以处理静态文件请求，但是它的性能并不如 Nginx 高。
+  - 因为 uWSGI 处理静态文件，是先将静态文件`读取到内存中`，然后在将数据从内存拷贝到 `socket` 缓冲区中, 中间经历了至少 `4` 次用户态和内核态的切换, `2` 次数据拷贝(一次是将文件数据从内核态缓冲区复制到用户态内存缓冲区, 另一次是将处理后的数据从用户态内存缓冲区复制到内核态的 socket 缓冲区)。
+  - 而 Nginx 在网卡支持 `DMA(直接内存访问)` 可以使用 `sendfile` 系统调用来直接将文件数据从`内核态缓冲区`直接拷贝到 `socket 缓冲区`中(DMA控制器), 实现 `0拷贝`
+- Nginx 配置灵活，可以通过配置来实现负载均衡等功能
+- Nginx 能提高安全性, 隐藏后端服务器,  SSL/TLS 加密, 必要的时候还能用限制连接速率、限制请求速率、限制请求大小等功能，这些功能可以有效地防止恶意攻击
 
 ## 更多 uwsgi 配置
 
 TODO
-
 
 ## 一些常见问题和解决方案
 
